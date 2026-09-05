@@ -1,0 +1,296 @@
+[
+  {
+    "alert_id": "ALT-1001",
+    "timestamp": "2026-09-05T11:40:00Z",
+    "device_id": "core-router-lisbon-01",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "core",
+    "alert_type": "LINK_DOWN",
+    "severity": "CRITICAL",
+    "message": "Optical transceiver Loss of Signal (LOS) on DWDM interface ge-0/0/1 connected to Trans-Atlantic Span 4"
+  },
+  {
+    "alert_id": "ALT-1002",
+    "timestamp": "2026-09-05T11:40:05Z",
+    "device_id": "core-router-lisbon-01",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "core",
+    "alert_type": "BGP_DOWN",
+    "severity": "CRITICAL",
+    "message": "BGP peering session with Bermuda Gateway 198.51.100.24 transitioned to IDLE"
+  },
+  {
+    "alert_id": "ALT-1003",
+    "timestamp": "2026-09-05T11:40:12Z",
+    "device_id": "dist-switch-lisbon-02",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "distribution",
+    "alert_type": "UNREACHABLE",
+    "severity": "CRITICAL",
+    "message": "Upstream trunk link unreachable via core-router-lisbon-01"
+  },
+  {
+    "alert_id": "ALT-1004",
+    "timestamp": "2026-09-05T11:40:18Z",
+    "device_id": "access-node-lisbon-05",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "access",
+    "alert_type": "HIGH_LATENCY",
+    "severity": "WARNING",
+    "message": "Ping latency spiked from 18ms to 340ms due to secondary ring failover congestion"
+  },
+  {
+    "alert_id": "ALT-1005",
+    "timestamp": "2026-09-05T11:40:22Z",
+    "device_id": "access-node-lisbon-06",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "access",
+    "alert_type": "PACKET_DROP",
+    "severity": "WARNING",
+    "message": "Packet loss elevated to 78.4% on interface eth-0/2"
+  },
+  {
+    "alert_id": "ALT-1006",
+    "timestamp": "2026-09-05T11:40:30Z",
+    "device_id": "access-node-lisbon-07",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "access",
+    "alert_type": "UNREACHABLE",
+    "severity": "WARNING",
+    "message": "ICMP ping heartbeat failed 5 consecutive probes"
+  },
+  {
+    "alert_id": "ALT-1007",
+    "timestamp": "2026-09-05T11:40:35Z",
+    "device_id": "dist-switch-lisbon-03",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "distribution",
+    "alert_type": "ROUTE_FAIL",
+    "severity": "CRITICAL",
+    "message": "OSPF adjacency lost with neighbor core-router-lisbon-01"
+  },
+  {
+    "alert_id": "ALT-1008",
+    "timestamp": "2026-09-05T11:40:40Z",
+    "device_id": "access-node-lisbon-08",
+    "site_id": "SITE-LISBON-01",
+    "device_role": "access",
+    "alert_type": "PACKET_DROP",
+    "severity": "WARNING",
+    "message": "Buffer overrun on access port trunk 4"
+  },
+
+  {
+    "alert_id": "ALT-2001",
+    "timestamp": "2026-09-05T11:45:00Z",
+    "device_id": "radius-gw-chicago-01",
+    "site_id": "SITE-CHICAGO-DC1",
+    "device_role": "core",
+    "alert_type": "RADIUS_STORM",
+    "severity": "CRITICAL",
+    "message": "AAA Ingress authentication request rate exceeded threshold: 7,420 req/sec"
+  },
+  {
+    "alert_id": "ALT-2002",
+    "timestamp": "2026-09-05T11:45:08Z",
+    "device_id": "radius-gw-chicago-01",
+    "site_id": "SITE-CHICAGO-DC1",
+    "device_role": "core",
+    "alert_type": "AUTH_FAILURE_SPIKE",
+    "severity": "CRITICAL",
+    "message": "Access-Reject burst: 1,890 failures/min due to subscriber DB timeout"
+  },
+  {
+    "alert_id": "ALT-2003",
+    "timestamp": "2026-09-05T11:45:15Z",
+    "device_id": "dist-switch-chicago-04",
+    "site_id": "SITE-CHICAGO-DC1",
+    "device_role": "distribution",
+    "alert_type": "QUEUE_OVERFLOW",
+    "severity": "WARNING",
+    "message": "RADIUS VLAN ingress buffer queue utilization at 98%"
+  },
+  {
+    "alert_id": "ALT-2004",
+    "timestamp": "2026-09-05T11:45:20Z",
+    "device_id": "access-ap-chicago-101",
+    "site_id": "SITE-CHICAGO-DC1",
+    "device_role": "access",
+    "alert_type": "CLIENT_DISCONNECT",
+    "severity": "WARNING",
+    "message": "Massive 802.1X re-authentication timeouts affecting 4,200 wireless subscribers"
+  },
+  {
+    "alert_id": "ALT-2005",
+    "timestamp": "2026-09-05T11:45:28Z",
+    "device_id": "access-ap-chicago-102",
+    "site_id": "SITE-CHICAGO-DC1",
+    "device_role": "access",
+    "alert_type": "CLIENT_DISCONNECT",
+    "severity": "WARNING",
+    "message": "EAP-TLS handshake failure rate > 65%"
+  },
+  {
+    "alert_id": "ALT-2006",
+    "timestamp": "2026-09-05T11:45:35Z",
+    "device_id": "radius-gw-chicago-02",
+    "site_id": "SITE-CHICAGO-DC1",
+    "device_role": "core",
+    "alert_type": "CPU_HIGH",
+    "severity": "CRITICAL",
+    "message": "AAA Daemon CPU utilization at 99.8% across all 16 cores"
+  },
+  {
+    "alert_id": "ALT-2007",
+    "timestamp": "2026-09-05T11:45:40Z",
+    "device_id": "access-ap-chicago-103",
+    "site_id": "SITE-CHICAGO-DC1",
+    "device_role": "access",
+    "alert_type": "AUTH_TIMEOUT",
+    "severity": "WARNING",
+    "message": "Radius server 10.240.12.10 non-responsive to EAP-Request"
+  },
+
+  {
+    "alert_id": "ALT-3001",
+    "timestamp": "2026-09-05T11:02:10Z",
+    "device_id": "edge-switch-seattle-09",
+    "site_id": "SITE-SEATTLE-04",
+    "device_role": "access",
+    "alert_type": "PING_JITTER",
+    "severity": "INFO",
+    "message": "Transient ICMP round-trip jitter burst (4ms -> 12ms) lasting 2 seconds"
+  },
+  {
+    "alert_id": "ALT-3002",
+    "timestamp": "2026-09-05T11:18:45Z",
+    "device_id": "temp-sensor-tokyo-03",
+    "site_id": "SITE-TOKYO-02",
+    "device_role": "access",
+    "alert_type": "ENV_TEMP_MINOR",
+    "severity": "INFO",
+    "message": "Rack ambient temperature brief fluctuation to 24.1C"
+  },
+  {
+    "alert_id": "ALT-3003",
+    "timestamp": "2026-09-05T11:29:12Z",
+    "device_id": "edge-switch-miami-14",
+    "site_id": "SITE-MIAMI-01",
+    "device_role": "access",
+    "alert_type": "PORT_FLAP_SINGLE",
+    "severity": "INFO",
+    "message": "Unused admin port FastEthernet0/24 link state down (unplugged maintenance cable)"
+  },
+  {
+    "alert_id": "ALT-3004",
+    "timestamp": "2026-09-05T11:34:01Z",
+    "device_id": "access-ap-denver-88",
+    "site_id": "SITE-DENVER-03",
+    "device_role": "access",
+    "alert_type": "SNMP_POLL_SKIP",
+    "severity": "INFO",
+    "message": "Single SNMP poll interval missed due to local broadcast filtering"
+  },
+  {
+    "alert_id": "ALT-3005",
+    "timestamp": "2026-09-05T11:49:50Z",
+    "device_id": "backup-ups-london-01",
+    "site_id": "SITE-LONDON-01",
+    "device_role": "access",
+    "alert_type": "BATTERY_SELFTEST",
+    "severity": "INFO",
+    "message": "Scheduled weekly UPS battery self-test completed successfully"
+  },
+  {
+    "alert_id": "ALT-3006",
+    "timestamp": "2026-09-05T11:52:10Z",
+    "device_id": "edge-router-sydney-02",
+    "site_id": "SITE-SYDNEY-01",
+    "device_role": "access",
+    "alert_type": "NTP_SYNC_ADJUST",
+    "severity": "INFO",
+    "message": "NTP clock slew offset corrected by 0.003 seconds"
+  },
+
+  {
+    "alert_id": "ALT-4001",
+    "timestamp": "2026-09-05T11:55:00Z",
+    "device_id": "quantum-crypto-gw-01",
+    "site_id": "SITE-FRANKFURT-SEC",
+    "device_role": "core",
+    "alert_type": "ZERO_DAY_KERNEL_PANIC",
+    "severity": "CRITICAL",
+    "message": "Kernel panic in custom ASIC quantum key distribution module QKD_DRV.sys: invalid opcode 0x0f0b at 0xffffffff8104a"
+  },
+  {
+    "alert_id": "ALT-4002",
+    "timestamp": "2026-09-05T11:55:04Z",
+    "device_id": "quantum-crypto-gw-01",
+    "site_id": "SITE-FRANKFURT-SEC",
+    "device_role": "core",
+    "alert_type": "ASIC_HARD_LOCK",
+    "severity": "CRITICAL",
+    "message": "Photonic Qubit Entropy Coprocessor stopped responding to PCIe heartbeat interrupt"
+  },
+  {
+    "alert_id": "ALT-4003",
+    "timestamp": "2026-09-05T11:55:10Z",
+    "device_id": "dist-sec-frankfurt-02",
+    "site_id": "SITE-FRANKFURT-SEC",
+    "device_role": "distribution",
+    "alert_type": "CRYPTO_KEY_OUT_OF_SYNC",
+    "severity": "CRITICAL",
+    "message": "MACsec encryption key exchange handshake failure with quantum-crypto-gw-01"
+  },
+  {
+    "alert_id": "ALT-4004",
+    "timestamp": "2026-09-05T11:55:18Z",
+    "device_id": "dist-sec-frankfurt-02",
+    "site_id": "SITE-FRANKFURT-SEC",
+    "device_role": "distribution",
+    "alert_type": "HARDWARE_FAULT",
+    "severity": "CRITICAL",
+    "message": "PCIe bus fatal parity error on Slot 3 QKD Accelerator"
+  },
+
+  {
+    "alert_id": "ALT-5001",
+    "timestamp": "2026-09-05T11:30:00Z",
+    "device_id": "dist-switch-tokyo-01",
+    "site_id": "SITE-TOKYO-CORE",
+    "device_role": "distribution",
+    "alert_type": "MEM_LEAK_WARN",
+    "severity": "WARNING",
+    "message": "Process 'routing-engine' memory pool utilization reached 94.2%"
+  },
+  {
+    "alert_id": "ALT-5002",
+    "timestamp": "2026-09-05T11:30:15Z",
+    "device_id": "dist-switch-tokyo-01",
+    "site_id": "SITE-TOKYO-CORE",
+    "device_role": "distribution",
+    "alert_type": "BUFFER_EXHAUSTION",
+    "severity": "CRITICAL",
+    "message": "Control plane CPU buffer allocation failed for incoming SNMP probes"
+  },
+  {
+    "alert_id": "ALT-5003",
+    "timestamp": "2026-09-05T11:30:28Z",
+    "device_id": "access-switch-tokyo-11",
+    "site_id": "SITE-TOKYO-CORE",
+    "device_role": "access",
+    "alert_type": "SNMP_TIMEOUT",
+    "severity": "WARNING",
+    "message": "SNMP polling query to dist-switch-tokyo-01 timed out after 5000ms"
+  },
+  {
+    "alert_id": "ALT-5004",
+    "timestamp": "2026-09-05T11:30:35Z",
+    "device_id": "access-switch-tokyo-12",
+    "site_id": "SITE-TOKYO-CORE",
+    "device_role": "access",
+    "alert_type": "SLOW_CLI",
+    "severity": "WARNING",
+    "message": "Management console response latency > 4000ms due to CPU buffer lock"
+  }
+]
