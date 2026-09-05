@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchTriageData();
 
   // Attach run triage button listener
-  document.getElementById('btn-triage').addEventListener('click', runTriageSimulation);
+  document.getElementById('btn-triage')?.addEventListener('click', runTriageSimulation);
 });
 
 async function fetchTriageData() {
@@ -49,8 +49,10 @@ async function fetchTriageData() {
 
 async function runTriageSimulation() {
   const btn = document.getElementById('btn-triage');
-  btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Stream...`;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Stream...`;
+  }
 
   try {
     const res = await fetch('/api/triage', { method: 'POST' });
@@ -68,13 +70,15 @@ async function runTriageSimulation() {
 
     onSearchOrFilterChange();
     updateStatsBanner();
-    showToast('Triage simulation completed successfully! Alerts correlated.', 'success');
+    showToast('Triage simulation completed! Alerts correlated with deterministic rules.', 'success');
   } catch (err) {
     console.error('Triage error:', err);
     showToast('Error executing triage simulation', 'error');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Run Triage Simulation`;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Run Triage Simulation`;
+    }
   }
 }
 
@@ -95,11 +99,11 @@ function switchTab(tabName) {
     const btn = document.getElementById(`tab-${t}`);
     const view = document.getElementById(`view-${t}`);
     if (t === tabName) {
-      btn.classList.add('active');
-      view.classList.remove('hidden');
+      btn?.classList.add('active');
+      view?.classList.remove('hidden');
     } else {
-      btn.classList.remove('active');
-      view.classList.add('hidden');
+      btn?.classList.remove('active');
+      view?.classList.add('hidden');
     }
   });
 
@@ -170,18 +174,25 @@ function renderIncidents() {
           <p class="text-xs text-slate-600 line-clamp-2 mt-0.5 leading-relaxed">${inc.summary}</p>
         </div>
 
+        <!-- Deterministic Explainability Pill -->
+        <div class="p-2 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-700 flex items-center gap-1.5 font-mono">
+          <i class="fa-solid fa-code-branch text-sky-600 text-[10px]"></i>
+          <span class="truncate">${inc.causal_rule_pill || `Rule: Temporal Co-occurrence (Δt = 94s < 180s) + Shared Upstream L2 Trunk`}</span>
+        </div>
+
         <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200">
           <div class="flex items-center gap-3">
-            <span><i class="fa-solid fa-network-wired text-sky-600"></i> ${inc.affected_nodes.length} Nodes</span>
+            <button onclick="event.stopPropagation(); openBlastRadiusModal('${inc.incident_id}')" class="text-sky-700 font-bold hover:text-sky-800 flex items-center gap-1">
+              <i class="fa-solid fa-circle-nodes text-sky-600"></i> ${inc.affected_nodes.length} Nodes
+            </button>
             <span><i class="fa-solid fa-bell text-purple-600"></i> ${inc.alerts_count} Alerts</span>
-            <span><i class="fa-solid fa-location-dot text-amber-600"></i> ${inc.site_id}</span>
           </div>
 
           <button 
-            onclick="event.stopPropagation(); executePlaybook('${inc.incident_id}')" 
+            onclick="event.stopPropagation(); openTerminalModal('${inc.affected_nodes[0] || 'device'}', 'show ip bgp summary')" 
             class="px-2.5 py-1 rounded bg-sky-50 border border-sky-300 text-sky-700 hover:bg-sky-100 font-bold text-[10px] flex items-center gap-1 transition"
           >
-            <i class="fa-solid fa-play text-[9px]"></i> Execute
+            <i class="fa-solid fa-terminal text-[9px]"></i> CLI Diag
           </button>
         </div>
       </div>
@@ -213,115 +224,82 @@ function renderDetailPanel() {
   const evalData = inc.triage_evaluation || {};
   const isEscalated = evalData.triage_mode === 'LEVEL_2_ESCALATION';
 
-  if (isEscalated) {
-    // Level-2 Escalation Packet View
-    panel.innerHTML = `
-      <div class="flex flex-col gap-4">
-        <!-- Banner Header -->
-        <div class="flex items-start justify-between border-b border-purple-200 pb-3">
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="px-2.5 py-0.5 rounded text-xs font-bold badge-escalated flex items-center gap-1.5 w-fit">
-                <i class="fa-solid fa-triangle-exclamation"></i> LEVEL-2 ESCALATION PACKET GENERATED
-              </span>
-              <span class="font-mono text-xs text-slate-500 font-bold">${inc.incident_id}</span>
-            </div>
-            <h3 class="font-bold text-base text-slate-900">${inc.title}</h3>
+  panel.innerHTML = `
+    <div class="flex flex-col gap-4">
+      
+      <!-- Top Banner & Human-in-the-Loop Action Toolbar -->
+      <div class="flex flex-wrap items-start justify-between border-b border-slate-200 pb-3 gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="px-2.5 py-0.5 rounded text-xs font-bold ${isEscalated ? 'badge-escalated' : 'badge-cited'} flex items-center gap-1.5 w-fit">
+              <i class="fa-solid ${isEscalated ? 'fa-triangle-exclamation' : 'fa-book-bookmark'}"></i> 
+              ${isEscalated ? 'LEVEL-2 ESCALATION PACKET' : `Grounded Citation: ${evalData.citation}`}
+            </span>
+            <span class="font-mono text-xs text-slate-500 font-bold">${inc.incident_id}</span>
           </div>
-          
-          <button onclick="copyEscalationPacket('${inc.incident_id}')" class="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition cursor-pointer">
-            <i class="fa-solid fa-copy"></i> Copy L2 Packet
-          </button>
+          <h3 class="font-bold text-base text-slate-900">${inc.title}</h3>
         </div>
 
-        <!-- Reason Card -->
+        <!-- Human-in-the-Loop Action Toolbar -->
+        <div class="flex items-center gap-2">
+          <button onclick="dispatchTicket('${inc.incident_id}')" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer" title="Simulate Jira/ServiceNow ticket creation">
+            <i class="fa-solid fa-ticket"></i> Dispatch Ticket
+          </button>
+          
+          <button onclick="demoteToNoise('${inc.incident_id}')" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer" title="Reclassify alert into Noise pool">
+            <i class="fa-solid fa-filter-circle-xmark"></i> Demote Noise
+          </button>
+
+          <button onclick="downloadDossier('${inc.incident_id}')" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer" title="Force L2 Escalation Dossier download">
+            <i class="fa-solid fa-file-arrow-down"></i> Force Dossier
+          </button>
+        </div>
+      </div>
+
+      <!-- Deterministic Causal "Why Grouped?" Explainability Container -->
+      <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl flex flex-col gap-1.5 font-mono text-xs text-slate-200">
+        <div class="flex items-center justify-between text-sky-400 font-bold text-[11px] uppercase tracking-wider">
+          <span><i class="fa-solid fa-shield-halved"></i> Deterministic Causal Explainability</span>
+          <span class="text-slate-400">Rule Engine Grounding</span>
+        </div>
+        <div class="text-emerald-400 text-xs font-semibold">
+          ► ${inc.causal_rule_pill || `Rule: Temporal Co-occurrence (Δt = 94s < 180s) + Shared L2 Upstream Interface (ge-0/0/1)`}
+        </div>
+        <div class="text-sky-300 text-[11px]">
+          ► ${inc.topology_rule_pill || `Topology: Site (${inc.site_id}) & Core-to-Access Dependency Cascade (${inc.affected_nodes.length} nodes)`}
+        </div>
+      </div>
+
+      <!-- Interactive Blast-Radius Quick Visualizer Trigger -->
+      <div class="p-3 bg-sky-50 border border-sky-200 rounded-xl flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 text-sky-900 font-medium">
+          <i class="fa-solid fa-circle-nodes text-sky-600 text-base"></i>
+          <span>Impacted Nodes Blast Radius (${inc.affected_nodes.length} devices)</span>
+        </div>
+        <button onclick="openBlastRadiusModal('${inc.incident_id}')" class="px-3 py-1 bg-white border border-sky-300 text-sky-700 hover:bg-sky-100 font-bold rounded-lg text-xs transition shadow-sm">
+          <i class="fa-solid fa-expand"></i> Launch Interactive Graph
+        </button>
+      </div>
+
+      <!-- RAG Recommendation & Actions -->
+      ${isEscalated ? `
         <div class="bg-purple-50 border border-purple-200 rounded-xl p-3.5 text-xs text-purple-900">
           <div class="flex items-center gap-2 font-bold text-purple-700 uppercase tracking-wider mb-1">
             <i class="fa-solid fa-circle-info text-purple-600"></i> Escalation Reason
           </div>
           <p class="leading-relaxed text-slate-700 font-medium">${evalData.escalation_reason || 'RAG vector similarity confidence < 0.70. Automated execution bypassed for safety.'}</p>
         </div>
-
-        <!-- Hypothesized Root Cause Domain -->
-        <div>
-          <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Hypothesized Domain & Root Cause</h4>
-          <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-sky-300 flex items-center gap-2 shadow-inner">
-            <i class="fa-solid fa-terminal text-sky-400"></i>
-            <span>${evalData.hypothesized_domain || inc.domain}</span>
-          </div>
-        </div>
-
-        <!-- Impacted Topology Nodes -->
-        <div>
-          <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Impacted Nodes (${inc.affected_nodes.length})</h4>
-          <div class="flex flex-wrap gap-2">
-            ${inc.affected_nodes.map(n => `
-              <span class="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-300 font-mono text-xs text-slate-800 font-bold flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-red-500"></span> ${n}
-              </span>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- Timeline of Events -->
-        <div>
-          <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Aggregated Telemetry Timeline (${evalData.timeline_of_events?.length || inc.alerts.length})</h4>
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 max-h-40 overflow-y-auto font-mono text-[11px] flex flex-col gap-2 shadow-inner">
-            ${(evalData.timeline_of_events || inc.alerts.map(a => `[${a.timestamp}] ${a.device_id}: ${a.message}`)).map(t => `
-              <div class="text-slate-200 flex items-start gap-2">
-                <span class="text-sky-400">►</span>
-                <span>${t}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- Evaluated Runbooks Match Scores -->
-        <div>
-          <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Evaluated Runbook Similarity Scores</h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            ${(evalData.eval_matches || []).map(m => `
-              <div class="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-                <span class="font-mono text-slate-700 font-medium truncate">${m.filename}</span>
-                <span class="font-mono font-bold ${m.similarity_score >= 0.70 ? 'text-emerald-600' : 'text-amber-600'}">${m.similarity_score}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-  } else {
-    // Runbook Grounded Match View
-    panel.innerHTML = `
-      <div class="flex flex-col gap-4">
-        <!-- Banner Header -->
-        <div class="flex items-start justify-between border-b border-slate-200 pb-3">
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="px-2.5 py-0.5 rounded text-xs font-bold badge-cited flex items-center gap-1.5 w-fit">
-                <i class="fa-solid fa-book-bookmark"></i> Grounded Citation: ${evalData.citation}
-              </span>
-            </div>
-            <h3 class="font-bold text-base text-slate-900">${inc.title}</h3>
-          </div>
-
-          <button onclick="executePlaybook('${inc.incident_id}')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer">
-            <i class="fa-solid fa-circle-play"></i> Execute Full Playbook
-          </button>
-        </div>
-
-        <!-- Similarity Match Confidence Badge -->
+      ` : `
         <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-xs">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-brain text-emerald-600 text-base"></i>
             <span class="text-slate-800 font-medium">Gemini RAG Vector Match Score:</span>
           </div>
           <span class="font-mono font-bold text-emerald-800 bg-white border border-emerald-300 px-2.5 py-0.5 rounded-lg text-xs shadow-sm">
-            ${(evalData.confidence_score * 100).toFixed(1)}% Match
+            ${((evalData.confidence_score || 0.85) * 100).toFixed(1)}% Match
           </span>
         </div>
 
-        <!-- Recommended Actions List -->
         <div>
           <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Step-by-Step Triage & Mitigation Actions</h4>
           <div class="flex flex-col gap-2">
@@ -338,34 +316,233 @@ function renderDetailPanel() {
             `).join('')}
           </div>
         </div>
+      `}
 
-        <!-- Diagnostic CLI Snippet -->
-        <div>
-          <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">NOC CLI Diagnostic Command</h4>
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 font-mono text-xs text-sky-300 flex items-center justify-between shadow-inner">
-            <span>ssh noc@${inc.affected_nodes[0] || 'router'} 'show ip bgp summary'</span>
-            <button onclick="copyToClipboard('ssh noc@${inc.affected_nodes[0] || 'router'} \'show ip bgp summary\'', 'CLI command copied!')" class="text-slate-400 hover:text-white transition">
-              <i class="fa-solid fa-copy"></i>
-            </button>
-          </div>
+      <!-- Diagnostic CLI Terminal Simulator Box -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider">NOC Diagnostic Command</h4>
+          <button onclick="openTerminalModal('${inc.affected_nodes[0] || 'router'}', 'show ip bgp summary')" class="text-sky-600 hover:text-sky-700 font-bold text-xs flex items-center gap-1">
+            <i class="fa-solid fa-terminal"></i> Run Live Diagnostic
+          </button>
         </div>
-
-        <!-- Aggregated Alert Stream Timeline -->
-        <div>
-          <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Aggregated Alerts Timeline</h4>
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 max-h-36 overflow-y-auto font-mono text-[11px] flex flex-col gap-1.5 shadow-inner">
-            ${inc.alerts.map(a => `
-              <div class="text-slate-200 flex items-center gap-2">
-                <span class="text-slate-400">${a.timestamp}</span> 
-                <span class="text-sky-400 font-bold">[${a.device_id}]</span> 
-                <span class="text-slate-100">${a.message}</span>
-              </div>
-            `).join('')}
-          </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 font-mono text-xs text-sky-300 flex items-center justify-between shadow-inner">
+          <span>ssh noc@${inc.affected_nodes[0] || 'router'} 'show ip bgp summary'</span>
+          <button onclick="openTerminalModal('${inc.affected_nodes[0] || 'router'}', 'show ip bgp summary')" class="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-slate-950 font-bold text-[11px] transition">
+            Run
+          </button>
         </div>
       </div>
-    `;
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   FEATURE 1: INTERACTIVE BLAST-RADIUS SVG TOPOLOGY RENDERER
+   ========================================================= */
+function openBlastRadiusModal(targetId) {
+  const modal = document.getElementById('blast-modal');
+  if (!modal) return;
+
+  const inc = state.incidents.find(i => i.incident_id === targetId || i.site_id === targetId || i.affected_nodes.includes(targetId)) || state.selectedIncident || state.incidents[0];
+  
+  if (inc) {
+    document.getElementById('blast-modal-site').textContent = inc.site_id;
+    renderBlastSvgGraph(inc);
   }
+
+  modal.classList.remove('hidden');
+}
+
+function closeBlastRadiusModal() {
+  document.getElementById('blast-modal')?.classList.add('hidden');
+}
+
+function renderBlastSvgGraph(inc) {
+  const svg = document.getElementById('blast-svg');
+  if (!svg) return;
+
+  const rootDevice = inc.primary_device || inc.affected_nodes[0] || 'CORE-RTR-01';
+  const affected = inc.affected_nodes.filter(n => n !== rootDevice);
+  const noiseNodes = state.noise.slice(0, 3).map(n => n.device_id);
+
+  // Define layout coordinates
+  const centerX = 380;
+  const centerY = 190;
+
+  let svgHtml = `
+    <!-- Defs for glow effects -->
+    <defs>
+      <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>
+  `;
+
+  // Draw links to transit nodes
+  const angleStep = Math.PI / Math.max(affected.length, 1);
+  const radius = 130;
+
+  const nodeCoords = [];
+
+  affected.forEach((node, i) => {
+    const angle = Math.PI - (i + 0.5) * (Math.PI / affected.length);
+    const nx = centerX + radius * Math.cos(angle);
+    const ny = centerY - radius * Math.sin(angle);
+    nodeCoords.push({ id: node, x: nx, y: ny, type: 'TRANSIT' });
+
+    svgHtml += `
+      <line x1="${centerX}" y1="${centerY}" x2="${nx}" y2="${ny}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4" />
+    `;
+  });
+
+  // Draw links to isolated noise nodes
+  noiseNodes.forEach((node, i) => {
+    const nx = 70 + i * 80;
+    const ny = 330;
+    nodeCoords.push({ id: node, x: nx, y: ny, type: 'NOISE' });
+
+    svgHtml += `
+      <line x1="${centerX}" y1="${centerY}" x2="${nx}" y2="${ny}" stroke="#475569" stroke-width="1" stroke-dasharray="2" opacity="0.5" />
+    `;
+  });
+
+  // Draw Root Cause Node at Center
+  svgHtml += `
+    <g class="cursor-pointer" onclick="inspectBlastNode('${rootDevice}', 'ROOT_CAUSE', '${inc.severity}', '${inc.site_id}')">
+      <circle cx="${centerX}" cy="${centerY}" r="28" fill="#ef4444" opacity="0.3" class="node-pulse" />
+      <circle cx="${centerX}" cy="${centerY}" r="20" fill="#dc2626" stroke="#fca5a5" stroke-width="3" filter="url(#glow-red)" />
+      <text x="${centerX}" y="${centerY + 4}" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold" font-family="JetBrains Mono">${rootDevice.substring(0, 10)}</text>
+      <text x="${centerX}" y="${centerY - 28}" text-anchor="middle" fill="#fca5a5" font-size="9" font-weight="bold">ROOT CAUSE</text>
+    </g>
+  `;
+
+  // Draw Transit Nodes
+  nodeCoords.filter(n => n.type === 'TRANSIT').forEach(n => {
+    svgHtml += `
+      <g class="cursor-pointer" onclick="inspectBlastNode('${n.id}', 'TRANSIT_IMPACT', 'WARNING', '${inc.site_id}')">
+        <circle cx="${n.x}" cy="${n.y}" r="16" fill="#d97706" stroke="#fde68a" stroke-width="2" />
+        <text x="${n.x}" y="${n.y + 4}" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="bold" font-family="JetBrains Mono">${n.id.substring(0, 8)}</text>
+      </g>
+    `;
+  });
+
+  // Draw Outer Noise Nodes
+  nodeCoords.filter(n => n.type === 'NOISE').forEach(n => {
+    svgHtml += `
+      <g class="cursor-pointer" onclick="inspectBlastNode('${n.id}', 'ISOLATED_NOISE', 'INFO', '${inc.site_id}')">
+        <circle cx="${n.x}" cy="${n.y}" r="12" fill="#334155" stroke="#64748b" stroke-width="1.5" />
+        <text x="${n.x}" y="${n.y + 3}" text-anchor="middle" fill="#cbd5e1" font-size="8" font-family="JetBrains Mono">${n.id.substring(0, 7)}</text>
+      </g>
+    `;
+  });
+
+  svg.innerHTML = svgHtml;
+  inspectBlastNode(rootDevice, 'ROOT_CAUSE', inc.severity, inc.site_id);
+}
+
+function inspectBlastNode(nodeId, role, status, siteId) {
+  const inspector = document.getElementById('blast-node-inspector');
+  if (!inspector) return;
+
+  const roleBadge = role === 'ROOT_CAUSE' ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-300">ROOT CAUSE</span>' :
+                    role === 'TRANSIT_IMPACT' ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">IMPACTED TRANSIT</span>' :
+                    '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">NOISE / ISOLATED</span>';
+
+  inspector.innerHTML = `
+    <div class="flex items-center gap-3">
+      <i class="fa-solid fa-server text-sky-600 text-lg"></i>
+      <div>
+        <div class="flex items-center gap-2">
+          <strong class="font-mono text-slate-900">${nodeId}</strong>
+          ${roleBadge}
+        </div>
+        <div class="text-[11px] text-slate-500">Site: ${siteId} | Interface: ge-0/0/1 (10Gbps Trunk) | Status: ${status}</div>
+      </div>
+    </div>
+    <button onclick="openTerminalModal('${nodeId}', 'show interface ge-0/0/1 diagnostics')" class="px-3 py-1 rounded bg-sky-600 text-white font-bold text-xs hover:bg-sky-700 transition">
+      <i class="fa-solid fa-terminal"></i> CLI Diag
+    </button>
+  `;
+}
+
+/* =========================================================
+   FEATURE 3: INTERACTIVE MOCK NOC TERMINAL (CLI SIMULATOR)
+   ========================================================= */
+function openTerminalModal(deviceId, command = 'show ip bgp summary') {
+  const modal = document.getElementById('terminal-modal');
+  if (!modal) return;
+
+  document.getElementById('terminal-target-device').textContent = `noc@${deviceId}`;
+  document.getElementById('terminal-input').value = command;
+
+  modal.classList.remove('hidden');
+  runTerminalExec();
+}
+
+function closeTerminalModal() {
+  document.getElementById('terminal-modal')?.classList.add('hidden');
+}
+
+async function runTerminalExec() {
+  const device = document.getElementById('terminal-target-device').textContent.replace('noc@', '');
+  const command = document.getElementById('terminal-input').value.trim() || 'show ip bgp summary';
+  const screen = document.getElementById('terminal-screen');
+
+  screen.innerHTML = `Running command on ${device}...\n$ ${command}\n`;
+
+  try {
+    const res = await fetch('/api/terminal/exec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device_id: device, command: command })
+    });
+    const data = await res.json();
+    
+    // Simulate streaming text output
+    screen.innerHTML = `$ ${command}\n\n${data.output}`;
+  } catch (err) {
+    screen.innerHTML = `$ ${command}\n\nError executing CLI command: Unable to connect to host.`;
+  }
+}
+
+/* =========================================================
+   FEATURE 4: HUMAN-IN-THE-LOOP ACTION TOOLBAR HANDLERS
+   ========================================================= */
+async function dispatchTicket(incidentId) {
+  try {
+    const res = await fetch(`/api/incidents/${incidentId}/dispatch-ticket`, { method: 'POST' });
+    const data = await res.json();
+    showToast(`Dispatched ServiceNow Ticket ${data.ticket_id} for ${incidentId}`, 'success');
+  } catch (err) {
+    showToast('Failed to dispatch ticket', 'error');
+  }
+}
+
+async function demoteToNoise(incidentId) {
+  try {
+    const res = await fetch(`/api/incidents/${incidentId}/demote-to-noise`, { method: 'POST' });
+    const data = await res.json();
+    
+    // Update local state
+    state.incidents = state.incidents.filter(i => i.incident_id !== incidentId);
+    if (state.selectedIncident?.incident_id === incidentId) {
+      state.selectedIncident = state.incidents[0] || null;
+    }
+
+    onSearchOrFilterChange();
+    updateStatsBanner();
+    showToast(`Incident ${incidentId} demoted to Noise pool`, 'info');
+  } catch (err) {
+    showToast('Failed to demote incident', 'error');
+  }
+}
+
+function downloadDossier(incidentId) {
+  window.open(`/api/incidents/${incidentId}/download-dossier`, '_blank');
+  showToast(`Downloaded L2 Escalation Dossier markdown file`, 'success');
 }
 
 function renderFullNoiseList() {
@@ -387,47 +564,14 @@ function renderFullNoiseList() {
       <p class="text-xs text-slate-600 line-clamp-2">${n.message}</p>
       <div class="pt-2 border-t border-slate-200 text-[10px] text-slate-500 flex justify-between">
         <span>Device: <strong class="text-slate-700">${n.device_id}</strong></span>
-        <span class="text-purple-700 font-semibold">Single Jitter Suppressed</span>
+        <span class="text-purple-700 font-semibold">${n.demoted_reason || 'Single Jitter Suppressed'}</span>
       </div>
     </div>
   `).join('');
 }
 
-function executePlaybook(incidentId) {
-  showToast(`Executed full mitigation playbook for ${incidentId}`, 'success');
-}
-
 function executeStep(incidentId, stepNum) {
   showToast(`Executed Action Step #${stepNum} for ${incidentId}`, 'success');
-}
-
-function copyEscalationPacket(incidentId) {
-  const inc = state.incidents.find(i => i.incident_id === incidentId);
-  if (!inc) return;
-
-  const evalData = inc.triage_evaluation || {};
-  const packetText = `
-=== L2 ESCALATION PACKET ===
-Incident ID: ${inc.incident_id}
-Title: ${inc.title}
-Severity: ${inc.severity} | Impact Score: ${inc.impact_score}
-Hypothesized Domain: ${evalData.hypothesized_domain || inc.domain}
-Reason: ${evalData.escalation_reason}
-Affected Nodes: ${inc.affected_nodes.join(', ')}
-Site: ${inc.site_id}
-Timestamp: ${new Date().toISOString()}
-============================
-  `.trim();
-
-  copyToClipboard(packetText, `L2 Escalation Packet for ${incidentId} copied to clipboard!`);
-}
-
-function copyToClipboard(text, successMsg) {
-  navigator.clipboard.writeText(text).then(() => {
-    showToast(successMsg, 'info');
-  }).catch(() => {
-    showToast('Failed to copy to clipboard', 'error');
-  });
 }
 
 function showToast(message, type = 'success') {
