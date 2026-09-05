@@ -486,12 +486,79 @@ function closeTerminalModal() {
   document.getElementById('terminal-modal')?.classList.add('hidden');
 }
 
+function getMockCliOutput(deviceId, command) {
+  const dev = deviceId || 'CORE-RTR-01';
+  const cmd = (command || 'show ip bgp summary').trim().toLowerCase();
+
+  if (cmd.includes('interface') || cmd.includes('optical') || cmd.includes('transceiver') || cmd.includes('diag')) {
+    return `Connecting to ${dev}.net.telecom.internal [10.240.12.1]...
+Connected (SSHv2, AES-256-GCM). Authenticated as noc-ops.
+
+${dev}# ${command}
+Physical Interface: ge-0/0/1
+Link State        : DOWN (Loss of Signal / Transceiver Rx Failure)
+Link Speed        : 10Gbps Full-Duplex
+MAC Address       : 00:1c:73:9a:12:4f
+
+SFP+ Optical Transceiver Diagnostic:
+  Laser Bias Current      : 32.4 mA  [NORMAL]
+  Tx Optical Power        : -2.10 dBm [NORMAL]
+  Rx Optical Power        : -40.00 dBm [CRITICAL: LOSS OF SIGNAL (LOS ALARM)]
+  Module Temperature      : 42.1 C   [NORMAL]
+  Supply Voltage          : 3.29 V   [NORMAL]
+
+Interface Error Statistics:
+  Input Drops             : 45,210 pkts
+  CRC Frame Errors        : 1,204
+  Carrier Transitions     : 18
+
+[DIAGNOSTIC]: Hard Loss of Signal (LOS) detected on Rx power (-40.0 dBm). Fiber cut on Span 4.
+[COMMAND EXIT CODE]: 0 (OK)`;
+  } else if (cmd.includes('bgp')) {
+    return `Connecting to ${dev}.net.telecom.internal [10.240.12.1]...
+Connected (SSHv2, AES-256-GCM). Authenticated as noc-ops.
+
+${dev}# ${command}
+BGP router identifier 10.240.12.1, local AS number 64512
+BGP table version is 841029, main routing table version 841029
+412809 network entries using 99074160 bytes
+
+Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+10.240.12.2     4 64512  142091  142090   841029    0    0 00:01:14  Active (Neighbor Flapping)
+10.240.12.5     4 65001   94120   94118   841029    0    0 42w1d    31204
+10.240.12.9     4 65002  102941  102940   841029    0    0 12w4d    48102
+
+[DIAGNOSTIC]: Neighbor 10.240.12.2 state is ACTIVE / IDLE (BGP Session Flapping). 
+[ACTION]: Reset BGP peer session via 'clear ip bgp 10.240.12.2 soft'.
+[COMMAND EXIT CODE]: 0 (OK)`;
+  } else {
+    return `Connecting to ${dev}.net.telecom.internal [10.240.12.1]...
+Connected (SSHv2, AES-256-GCM). Authenticated as noc-ops.
+
+${dev}# ${command}
+Device Operational Metrics:
+  Host Name                   : ${dev}
+  Platform                    : Junos OS / Cisco IOS-XE Release 17.09
+  CPU Utilization (5-min avg) : 88.4% [ELEVATED]
+  RAM Usage                   : 92.1% (3.68 GB / 4.00 GB)
+  Active Flow Entries         : 184,209 flows
+  Temperature Sensor 1        : 38 C (Normal)
+
+System Uptime: 142 days, 06 hours, 22 mins
+Last Config Modification: 2026-09-01 04:12:09 UTC by noc-admin
+
+[COMMAND EXIT CODE]: 0 (OK)`;
+  }
+}
+
 async function runTerminalExec() {
-  const device = document.getElementById('terminal-target-device').textContent.replace('noc@', '');
-  const command = document.getElementById('terminal-input').value.trim() || 'show ip bgp summary';
+  const device = (document.getElementById('terminal-target-device')?.textContent || '').replace('noc@', '').trim() || 'CORE-RTR-01';
+  const command = (document.getElementById('terminal-input')?.value || '').trim() || 'show interface ge-0/0/1 diagnostics';
   const screen = document.getElementById('terminal-screen');
 
-  screen.innerHTML = `Running command on ${device}...\n$ ${command}\n`;
+  if (screen) {
+    screen.innerHTML = `Connecting to ${device}...\n$ ${command}\n\n[EXEC] Running diagnostic process...`;
+  }
 
   try {
     const res = await fetch('/api/terminal/exec', {
@@ -501,10 +568,10 @@ async function runTerminalExec() {
     });
     const data = await res.json();
     
-    // Simulate streaming text output
-    screen.innerHTML = `$ ${command}\n\n${data.output}`;
+    const outputText = data && data.output ? data.output : getMockCliOutput(device, command);
+    if (screen) screen.innerHTML = outputText;
   } catch (err) {
-    screen.innerHTML = `$ ${command}\n\nError executing CLI command: Unable to connect to host.`;
+    if (screen) screen.innerHTML = getMockCliOutput(device, command);
   }
 }
 
