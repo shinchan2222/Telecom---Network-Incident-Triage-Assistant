@@ -93,6 +93,73 @@ def trigger_triage(payload: Optional[List[Dict[str, Any]]] = Body(None)):
         "noise": results["noise"]
     }
 
+@app.post("/api/triage/preset")
+def trigger_preset_scenario(scenario: str = "ALL"):
+    """Triggers triage pipeline for a specific sample scenario (FIBER_CUT, BGP_FLAP, RADIUS_STORM, MEMORY_LEAK, ALL)."""
+    raw_alerts = load_alerts()
+    scenario_key = scenario.upper().strip()
+
+    if scenario_key == "FIBER_CUT":
+        filtered_alerts = [a for a in raw_alerts if a.get("site_id") in ["SITE-BERMUDA-01", "SITE-LISBON-01"] or "Fiber" in a.get("alert_type", "")]
+    elif scenario_key == "BGP_FLAP":
+        filtered_alerts = [a for a in raw_alerts if a.get("site_id") == "SITE-BGL-01" or "BGP" in a.get("alert_type", "")]
+    elif scenario_key == "RADIUS_STORM":
+        filtered_alerts = [a for a in raw_alerts if a.get("site_id") == "SITE-FRA-01" or "RADIUS" in a.get("alert_type", "") or "Auth" in a.get("alert_type", "")]
+    elif scenario_key == "MEMORY_LEAK":
+        filtered_alerts = [a for a in raw_alerts if a.get("site_id") == "SITE-SJC-01" or "Memory" in a.get("alert_type", "")]
+    else:
+        filtered_alerts = raw_alerts
+
+    results = run_triage_pipeline(filtered_alerts)
+    return {
+        "status": "SUCCESS",
+        "scenario": scenario_key,
+        "total_raw_alerts": results["total_raw_alerts"],
+        "incidents_count": len(results["incidents"]),
+        "noise_count": len(results["noise"]),
+        "critical_count": results["critical_count"],
+        "noise_reduction_pct": results["noise_reduction_pct"],
+        "incidents": results["incidents"],
+        "noise": results["noise"]
+    }
+
+@app.get("/api/incidents/export")
+def export_incidents_report(format: str = "json"):
+    """Exports structured triage reports in JSON or CSV format."""
+    fmt = format.lower().strip()
+    incidents = triage_results.get("incidents", [])
+
+    if fmt == "csv":
+        import io, csv
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["Incident ID", "Title", "Severity", "Impact Score", "Site Location", "Affected Nodes Count", "Causal Explainability Rule", "Grounding Citation"])
+        for inc in incidents:
+            eval_data = inc.get("triage_evaluation", {})
+            writer.writerow([
+                inc.get("incident_id"),
+                inc.get("title"),
+                inc.get("severity"),
+                inc.get("impact_score"),
+                inc.get("site_id"),
+                len(inc.get("affected_nodes", [])),
+                inc.get("causal_rule_pill", "N/A"),
+                eval_data.get("citation", "N/A")
+            ])
+        from fastapi.responses import Response
+        return Response(
+            content=output.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=incidents_triage_report.csv"}
+        )
+    else:
+        from fastapi.responses import Response
+        return Response(
+            content=json.dumps(triage_results, indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": "attachment; filename=incidents_triage_report.json"}
+        )
+
 @app.get("/api/incidents")
 def get_incidents():
     """Returns grouped incidents with RAG recommendations and L2 escalation packets."""

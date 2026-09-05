@@ -110,16 +110,45 @@
         </button>
       </nav>
 
-      <!-- Status Indicator & Primary Action Button -->
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-slate-700 font-medium">Gemini RAG: <strong class="text-emerald-700 font-bold">ONLINE</strong></span>
+      <!-- Scenario Switcher & Action Controls -->
+      <div class="flex items-center gap-2">
+        
+        <!-- Scenario Preset Selector Dropdown -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs">
+          <i class="fa-solid fa-[#0284c7] fa-sliders text-sky-600"></i>
+          <select 
+            id="scenario-select" 
+            onchange="onScenarioPresetChange()" 
+            class="bg-transparent text-slate-800 font-bold text-xs focus:outline-none cursor-pointer py-1 pr-1"
+          >
+            <option value="ALL">Preset: All Stream Alerts</option>
+            <option value="FIBER_CUT">Scenario 1: Subsea Fiber Cut</option>
+            <option value="BGP_FLAP">Scenario 2: US-East BGP Flap</option>
+            <option value="RADIUS_STORM">Scenario 3: EU RADIUS Storm</option>
+            <option value="MEMORY_LEAK">Scenario 4: Switch Memory Leak</option>
+          </select>
         </div>
 
-        <button id="btn-triage" class="bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition shadow-md shadow-sky-500/20 active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-bolt"></i> Run Triage Simulation
+        <button id="btn-triage" class="bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 transition shadow-md shadow-sky-500/20 active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-bolt"></i> Run Triage
         </button>
+
+        <!-- 1-Click Export Report Dropdown -->
+        <div class="relative inline-block text-left">
+          <button onclick="toggleExportMenu()" class="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer">
+            <i class="fa-solid fa-file-export text-purple-600"></i> Export <i class="fa-solid fa-chevron-down text-[10px]"></i>
+          </button>
+          
+          <div id="export-menu" class="hidden absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-1 flex flex-col gap-1 text-xs font-semibold">
+            <button onclick="exportTriageReport('json')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-sky-50 text-slate-700 hover:text-sky-700 flex items-center gap-2">
+              <i class="fa-solid fa-file-code text-sky-600"></i> Download JSON Report
+            </button>
+            <button onclick="exportTriageReport('csv')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 flex items-center gap-2">
+              <i class="fa-solid fa-file-csv text-emerald-600"></i> Download CSV Report
+            </button>
+          </div>
+        </div>
+
       </div>
 
     </div>

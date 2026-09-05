@@ -641,6 +641,77 @@ function executeStep(incidentId, stepNum) {
   showToast(`Executed Action Step #${stepNum} for ${incidentId}`, 'success');
 }
 
+/* =========================================================
+   FEATURE 5: SCENARIO PRESET SWITCHER & 1-CLICK REPORT EXPORT
+   ========================================================= */
+async function onScenarioPresetChange() {
+  const scenarioKey = document.getElementById('scenario-select')?.value || 'ALL';
+  const btn = document.getElementById('btn-triage');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Switching...`;
+  }
+
+  try {
+    const res = await fetch(`/api/triage/preset?scenario=${scenarioKey}`, { method: 'POST' });
+    const data = await res.json();
+
+    state.incidents = data.incidents || [];
+    state.noise = data.noise || [];
+    state.stats.totalAlerts = data.total_raw_alerts || (state.incidents.length + state.noise.length);
+    state.stats.criticalCount = data.critical_count || state.incidents.filter(i => i.severity === 'CRITICAL').length;
+    state.stats.noiseReductionPct = data.noise_reduction_pct || 60.0;
+
+    if (state.incidents.length > 0) {
+      state.selectedIncident = state.incidents[0];
+    } else {
+      state.selectedIncident = null;
+    }
+
+    onSearchOrFilterChange();
+    updateStatsBanner();
+
+    const scenarioLabel = scenarioKey === 'FIBER_CUT' ? 'Subsea Fiber Cut' :
+                          scenarioKey === 'BGP_FLAP' ? 'US-East BGP Flap' :
+                          scenarioKey === 'RADIUS_STORM' ? 'EU RADIUS Storm' :
+                          scenarioKey === 'MEMORY_LEAK' ? 'Switch Memory Leak' : 'All Stream Alerts';
+
+    showToast(`Switched scenario to ${scenarioLabel} (${state.incidents.length} correlated incidents)`, 'info');
+  } catch (err) {
+    console.error('Error switching scenario:', err);
+    showToast('Failed to switch sample scenario', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Run Triage`;
+    }
+  }
+}
+
+function toggleExportMenu() {
+  const menu = document.getElementById('export-menu');
+  if (menu) {
+    menu.classList.toggle('hidden');
+  }
+}
+
+function exportTriageReport(format = 'json') {
+  const menu = document.getElementById('export-menu');
+  if (menu) menu.classList.add('hidden');
+
+  window.open(`/api/incidents/export?format=${format}`, '_blank');
+  showToast(`Downloading Triage Report (${format.toUpperCase()})`, 'success');
+}
+
+// Close export menu on outside click
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('export-menu');
+  const btn = e.target.closest('button[onclick*="toggleExportMenu"]');
+  if (menu && !menu.contains(e.target) && !btn) {
+    menu.classList.add('hidden');
+  }
+});
+
 function showToast(message, type = 'success') {
   const container = document.getElementById('toast-container');
   if (!container) return;
