@@ -3,126 +3,342 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PS07 - Network Incident Triage Assistant | NOC Command Center</title>
+  <title>Network Incident Triage Assistant | NOC Command Center</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome / Lucide Icons -->
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #080c14;
-      color: #f1f5f9;
+      background-color: #070a12;
+      color: #f8fafc;
       background-image: 
-        radial-gradient(circle at 10% 10%, rgba(0, 242, 254, 0.04) 0%, transparent 30%),
-        radial-gradient(circle at 90% 90%, rgba(127, 0, 255, 0.04) 0%, transparent 30%),
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+        radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.05) 0%, transparent 35%),
+        radial-gradient(circle at 85% 85%, rgba(127, 0, 255, 0.05) 0%, transparent 35%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
     }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
     .glass-card {
       background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.2s ease;
+      box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .glass-card:hover {
-      border-color: rgba(0, 242, 254, 0.3);
-      box-shadow: 0 4px 20px rgba(0, 242, 254, 0.1);
+      border-color: rgba(0, 242, 254, 0.35);
+      box-shadow: 0 8px 32px rgba(0, 242, 254, 0.12);
     }
     .glass-active {
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(0, 242, 254, 0.5);
-      box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+      background: rgba(15, 23, 42, 0.95);
+      border-color: #00f2fe !important;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.25) !important;
     }
-    .badge-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-    .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .badge-info { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .badge-escalated { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
-    .badge-cited { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    
+    .badge-critical { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .badge-warning { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-info { background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .badge-escalated { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.45); }
+    .badge-cited { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    
+    .tab-btn {
+      transition: all 0.2s ease;
+      color: #94a3b8;
+    }
+    .tab-btn:hover { color: #f8fafc; }
+    .tab-btn.active {
+      background: rgba(0, 242, 254, 0.15);
+      color: #00f2fe;
+      border-color: rgba(0, 242, 254, 0.4);
+    }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #0b1120; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 6px; }
     ::-webkit-scrollbar-thumb:hover { background: #00f2fe; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- Header / Navigation -->
-  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+  <!-- Header / Navigation Bar -->
+  <header class="border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
           <i class="fa-solid fa-satellite-dish text-slate-950 text-xl"></i>
         </div>
         <div>
           <h1 class="font-extrabold text-lg tracking-tight text-white flex items-center gap-2">
-            NOC<span class="text-cyan-400">.TRIAGE</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono">TRACK_ID=PS07</span>
+            TELECOM<span class="text-cyan-400">.TRIAGE</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/80 font-mono">AI Ops Engine</span>
           </h1>
-          <p class="text-xs text-slate-400">Network Incident Triage Assistant & RAG Engine</p>
+          <p class="text-xs text-slate-400">Network Incident Command & RAG Triage Assistant</p>
         </div>
       </div>
 
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+        <button id="tab-incidents" onclick="switchTab('incidents')" class="tab-btn active px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+          <span>Active Incidents</span>
+          <span id="tab-inc-count" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-cyan-300 font-mono">0</span>
+        </button>
+        <button id="tab-topology" onclick="switchTab('topology')" class="tab-btn px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-network-wired text-cyan-400"></i>
+          <span>Network Topology</span>
+        </button>
+        <button id="tab-noise" onclick="switchTab('noise')" class="tab-btn px-3.5 py-1.5 rounded-lg font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-filter text-purple-400"></i>
+          <span>Filtered Noise</span>
+          <span id="tab-noise-count" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-purple-300 font-mono">0</span>
+        </button>
+      </nav>
+
+      <!-- Status Indicator & Primary Action Button -->
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span class="text-slate-300">Gemini RAG: <strong class="text-emerald-400">ONLINE</strong></span>
         </div>
 
-        <button id="btn-triage" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition shadow-lg shadow-cyan-500/20">
+        <button id="btn-triage" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-cyan-500/25 active:scale-95 cursor-pointer">
           <i class="fa-solid fa-bolt"></i> Run Triage Simulation
         </button>
       </div>
+
     </div>
   </header>
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <!-- Column 1: Incident Board (5 cols) -->
-    <section class="lg:col-span-5 flex flex-col gap-4">
-      <div class="flex items-center justify-between">
-        <h2 class="font-bold text-sm text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-cyan-400"></i> Correlated Incidents (<span id="inc-count">0</span>)
-        </h2>
-        <span class="text-xs text-slate-500">Sorted by Impact Score</span>
-      </div>
-
-      <!-- Incident List Container -->
-      <div id="incident-list" class="flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-160px)] pr-1">
-        <!-- Rendered dynamically -->
-      </div>
-    </section>
-
-    <!-- Column 2: Triage & Escalation Detail Panel (4 cols) -->
-    <section class="lg:col-span-4 flex flex-col gap-4">
-      <h2 class="font-bold text-sm text-slate-300 uppercase tracking-wider flex items-center gap-2">
-        <i class="fa-solid fa-microchip text-purple-400"></i> AI Triage & Runbook Grounding
-      </h2>
-
-      <div id="detail-panel" class="glass-card rounded-xl p-5 flex flex-col gap-4 min-h-[500px]">
-        <div class="text-center text-slate-500 my-auto">
-          <i class="fa-solid fa-diagram-project text-4xl mb-3 text-slate-700"></i>
-          <p class="text-sm">Select an incident from the left board to view root cause analysis, citations, or escalation packet.</p>
+  <!-- Top Overview KPI Stats Banner -->
+  <section class="max-w-7xl w-full mx-auto px-4 pt-4 pb-2">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      
+      <div class="glass-card rounded-xl p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-cyan-950/60 border border-cyan-800/80 flex items-center justify-center text-cyan-400 text-base">
+          <i class="fa-solid fa-bell"></i>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider">Raw Alert Stream</span>
+          <div id="stat-total-alerts" class="font-extrabold text-lg text-white font-mono">10</div>
         </div>
       </div>
-    </section>
 
-    <!-- Column 3: Noise Feed Panel (3 cols) -->
-    <section class="lg:col-span-3 flex flex-col gap-4">
-      <div class="flex items-center justify-between">
-        <h2 class="font-bold text-sm text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-filter text-amber-400"></i> Filtered Noise (<span id="noise-count">0</span>)
-        </h2>
+      <div class="glass-card rounded-xl p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-amber-950/60 border border-amber-800/80 flex items-center justify-center text-amber-400 text-base">
+          <i class="fa-solid fa-diagram-project"></i>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider">Correlated Incidents</span>
+          <div id="stat-incidents" class="font-extrabold text-lg text-white font-mono">4</div>
+        </div>
       </div>
 
-      <div id="noise-list" class="glass-card rounded-xl p-4 flex flex-col gap-2 max-h-[calc(100vh-160px)] overflow-y-auto">
-        <!-- Rendered dynamically -->
+      <div class="glass-card rounded-xl p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-red-950/60 border border-red-800/80 flex items-center justify-center text-red-400 text-base">
+          <i class="fa-solid fa-shield-cat"></i>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider">Critical Outages</span>
+          <div id="stat-critical" class="font-extrabold text-lg text-red-400 font-mono">2</div>
+        </div>
       </div>
-    </section>
+
+      <div class="glass-card rounded-xl p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-purple-950/60 border border-purple-800/80 flex items-center justify-center text-purple-400 text-base">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider">Noise Filtered</span>
+          <div id="stat-noise-reduction" class="font-extrabold text-lg text-purple-300 font-mono">60.0%</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Main Content Workspaces -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 pt-2">
+
+    <!-- VIEW 1: ACTIVE INCIDENTS (Default Main Triage View) -->
+    <div id="view-incidents" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Incident List Board (5 cols) -->
+      <section class="lg:col-span-5 flex flex-col gap-3">
+        
+        <!-- Controls: Search & Domain Filter -->
+        <div class="glass-card rounded-xl p-3 flex flex-col gap-2">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input 
+              type="text" 
+              id="search-input" 
+              oninput="onSearchOrFilterChange()"
+              placeholder="Search by title, ID, node, or location..." 
+              class="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg pl-8 pr-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+            />
+          </div>
+
+          <div class="flex items-center justify-between gap-2 text-xs">
+            <select 
+              id="domain-select" 
+              onchange="onSearchOrFilterChange()" 
+              class="bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 cursor-pointer flex-1"
+            >
+              <option value="ALL">All Network Domains</option>
+              <option value="Fiber Backhaul">Fiber Backhaul</option>
+              <option value="Core BGP">Core BGP Routing</option>
+              <option value="Access / Auth">Access & Auth (AAA)</option>
+              <option value="Switch Hardware">Switch Hardware</option>
+            </select>
+
+            <span class="text-[11px] text-slate-400 whitespace-nowrap">Sorted by <strong>Impact Score</strong></span>
+          </div>
+        </div>
+
+        <!-- Incident Cards Container -->
+        <div id="incident-list" class="flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-270px)] pr-1">
+          <!-- Dynamically Rendered Cards -->
+        </div>
+
+      </section>
+
+      <!-- Right Column: AI Triage & Runbook Grounding Detail Panel (7 cols) -->
+      <section class="lg:col-span-7 flex flex-col gap-3">
+        
+        <div class="flex items-center justify-between px-1">
+          <h2 class="font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-microchip text-purple-400"></i> Root Cause Diagnosis & Action Playbook
+          </h2>
+          <span class="text-xs text-slate-500">Gemini RAG Grounded</span>
+        </div>
+
+        <div id="detail-panel" class="glass-card rounded-xl p-5 flex flex-col gap-4 min-h-[580px]">
+          <div class="text-center text-slate-500 my-auto p-8">
+            <i class="fa-solid fa-diagram-project text-5xl mb-3 text-slate-700"></i>
+            <h3 class="font-bold text-slate-400 text-sm mb-1">Select an Incident to Inspect</h3>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">Click any incident card on the left to view real-time RAG recommendations, exact runbook citations, or Level-2 Escalation Packets.</p>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- VIEW 2: NETWORK TOPOLOGY MAP -->
+    <div id="view-topology" class="hidden flex flex-col gap-4">
+      <div class="glass-card rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-sm text-white flex items-center gap-2">
+            <i class="fa-solid fa-network-wired text-cyan-400"></i> Regional Network Infrastructure Topology
+          </h2>
+          <p class="text-xs text-slate-400">Live operational status across core backbone routers, subsea spans, and auth clusters.</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-1.5 text-emerald-400 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Healthy</span>
+          <span class="flex items-center gap-1.5 text-amber-400 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Degraded</span>
+          <span class="flex items-center gap-1.5 text-red-400 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping"></span> Critical Outage</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6 min-h-[500px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Node 1 -->
+        <div class="p-4 rounded-xl bg-slate-900/90 border border-red-500/40 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-400 border border-red-800">CRITICAL</span>
+            <span class="font-mono text-xs text-cyan-400 font-semibold">SUBSEA-GW-01</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">Trans-Atlantic Subsea Trunk</h4>
+            <p class="text-xs text-slate-400">Span 4 (Bermuda - Lisbon)</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-xs flex justify-between text-slate-400">
+            <span>Latency: <strong class="text-red-400">999ms</strong></span>
+            <span>Packet Loss: <strong class="text-red-400">100%</strong></span>
+          </div>
+        </div>
+
+        <!-- Node 2 -->
+        <div class="p-4 rounded-xl bg-slate-900/90 border border-amber-500/40 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">DEGRADED</span>
+            <span class="font-mono text-xs text-cyan-400 font-semibold">CORE-BGP-01</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">US-East Gateway Router</h4>
+            <p class="text-xs text-slate-400">AS-64512 Peer Flap</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-xs flex justify-between text-slate-400">
+            <span>Latency: <strong class="text-amber-400">185ms</strong></span>
+            <span>Packet Loss: <strong class="text-amber-400">12%</strong></span>
+          </div>
+        </div>
+
+        <!-- Node 3 -->
+        <div class="p-4 rounded-xl bg-slate-900/90 border border-amber-500/40 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">DEGRADED</span>
+            <span class="font-mono text-xs text-cyan-400 font-semibold">AUTH-AAA-01</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">EU-Central RADIUS Cluster</h4>
+            <p class="text-xs text-slate-400">Authentication Storm</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-xs flex justify-between text-slate-400">
+            <span>Latency: <strong class="text-amber-400">320ms</strong></span>
+            <span>Packet Loss: <strong class="text-amber-400">8%</strong></span>
+          </div>
+        </div>
+
+        <!-- Node 4 -->
+        <div class="p-4 rounded-xl bg-slate-900/90 border border-emerald-500/40 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">HEALTHY</span>
+            <span class="font-mono text-xs text-cyan-400 font-semibold">APAC-CORE-02</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">APAC Edge Exchange</h4>
+            <p class="text-xs text-slate-400">Tokyo POP Primary</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-xs flex justify-between text-slate-400">
+            <span>Latency: <strong class="text-emerald-400">14ms</strong></span>
+            <span>Packet Loss: <strong class="text-emerald-400">0%</strong></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 3: FILTERED NOISE STREAM -->
+    <div id="view-noise" class="hidden flex flex-col gap-4">
+      <div class="glass-card rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-sm text-white flex items-center gap-2">
+            <i class="fa-solid fa-filter text-purple-400"></i> Suppressed Jitter & Noise Alerts Stream
+          </h2>
+          <p class="text-xs text-slate-400">Uncorroborated low-severity alerts automatically filtered by the sliding window correlation engine.</p>
+        </div>
+        <span class="text-xs px-3 py-1 rounded-lg bg-purple-950/60 border border-purple-800/80 text-purple-300 font-semibold">
+          60% Alert Noise Reduction
+        </span>
+      </div>
+
+      <div id="full-noise-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
 
   </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script src="/static/app.js"></script>
 </body>

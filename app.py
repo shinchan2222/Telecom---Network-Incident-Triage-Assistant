@@ -52,6 +52,8 @@ def run_triage_pipeline(raw_alerts: Optional[List[Dict[str, Any]]] = None):
     if raw_alerts is None:
         raw_alerts = load_alerts()
 
+    total_raw = len(raw_alerts)
+
     # 1. Correlation & Noise Filtering
     uncategorized_incidents, noise_list = correlate_alerts(raw_alerts)
 
@@ -64,8 +66,15 @@ def run_triage_pipeline(raw_alerts: Optional[List[Dict[str, Any]]] = None):
             triage_evaluation = rag_engine.evaluate_incident(inc)
             inc["triage_evaluation"] = triage_evaluation
 
+    noise_count = len(noise_list)
+    noise_reduction_pct = round((noise_count / total_raw * 100), 1) if total_raw > 0 else 0.0
+    critical_count = sum(1 for inc in prioritized_incidents if inc.get("severity") == "CRITICAL")
+
     triage_results["incidents"] = prioritized_incidents
     triage_results["noise"] = noise_list
+    triage_results["total_raw_alerts"] = total_raw
+    triage_results["noise_reduction_pct"] = noise_reduction_pct
+    triage_results["critical_count"] = critical_count
     triage_results["last_run_at"] = os.popen("date /t").read().strip() if os.name == 'nt' else os.popen("date").read().strip()
     return triage_results
 
@@ -75,8 +84,11 @@ def trigger_triage(payload: Optional[List[Dict[str, Any]]] = Body(None)):
     results = run_triage_pipeline(payload)
     return {
         "status": "SUCCESS",
+        "total_raw_alerts": results["total_raw_alerts"],
         "incidents_count": len(results["incidents"]),
         "noise_count": len(results["noise"]),
+        "critical_count": results["critical_count"],
+        "noise_reduction_pct": results["noise_reduction_pct"],
         "incidents": results["incidents"],
         "noise": results["noise"]
     }
@@ -86,6 +98,9 @@ def get_incidents():
     """Returns grouped incidents with RAG recommendations and L2 escalation packets."""
     return {
         "count": len(triage_results["incidents"]),
+        "total_raw_alerts": triage_results.get("total_raw_alerts", 0),
+        "critical_count": triage_results.get("critical_count", 0),
+        "noise_reduction_pct": triage_results.get("noise_reduction_pct", 0.0),
         "incidents": triage_results["incidents"]
     }
 
